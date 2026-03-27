@@ -21,7 +21,7 @@ for i, chat in enumerate(reversed(st.session_state.history)):
     st.sidebar.info(f"Q: {chat['question'][:20]}...")
 
 # Main Page
-st.title("🚀 Ved AI Search Engine")
+st.title("Ved AI")
 
 # Keys
 GROQ_KEY = "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"
