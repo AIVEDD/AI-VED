@@ -49,7 +49,7 @@ G_KEY = "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"
 T_KEY = "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"
 
 # Search Box
-query = st.text_input("", placeholder="Kuch bhi puchiye...", label_visibility="collapsed")
+query = st.text_input("", placeholder="Ask AI Ved...", label_visibility="collapsed")
 
 if st.button("Search"):
     if query:
