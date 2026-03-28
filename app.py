@@ -27,11 +27,11 @@ st.title("Ved AI")
 GROQ_KEY = "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"
 TAVILY_KEY = "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"
 
-query = st.text_input("Aap kya janna chahte hain?", placeholder="Yahan apna sawal likhein...")
+query = st.text_input("Aap kya janna chahte hain?", placeholder="Ask Ai Ved")
 
-if st.button("Search Karein"):
+if st.button("Search Here"):
     if query:
-        with st.spinner("Internet se dhoond raha hoon..."):
+        with st.spinner("Exploring..."):
             try:
                 # 1. Search Logic
                 url_s = "https://api.tavily.com/search"
