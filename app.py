@@ -16,7 +16,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Sidebar - Sirf History
+# 3. Sidebar - History
 with st.sidebar:
     st.title("📜 Search History")
     st.write("---")
@@ -32,79 +32,84 @@ with st.sidebar:
 # 4. Main UI
 st.markdown("<h1 style='text-align: center;'>AI Ved</h1>", unsafe_allow_html=True)
 
-# --- VOICE LOGIC FIX ---
-# Ye script mic se awaaz lekar Streamlit ke input mein bhej degi
-if "voice_text" not in st.session_state:
-    st.session_state.voice_text = ""
+# --- VOICE LOGIC WITH AUTO-SUBMIT ---
+if "query" not in st.session_state:
+    st.session_state.query = ""
 
 voice_js = """
 <script>
 const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 recognition.lang = 'hi-IN';
-recognition.continuous = false;
 
 function startVoice() {
     const btn = document.getElementById("mic_btn");
     btn.innerHTML = "🔴 Listening...";
-    btn.style.background = "#000";
     recognition.start();
 }
 
 recognition.onresult = (e) => {
-    const t = e.results[0][0].transcript;
-    // Bhejo data main window ko
+    const transcript = e.results[0][0].transcript;
+    // Direct Streamlit ke input ko update karne ke liye trick
     window.parent.postMessage({
         type: 'streamlit:setComponentValue',
-        value: t
+        value: transcript
     }, '*');
+    
     document.getElementById("mic_btn").innerHTML = "🎙️ Tap to Speak";
-    document.getElementById("mic_btn").style.background = "#FF4B4B";
 };
 
-recognition.onerror = (e) => {
-    alert("Mic error: " + e.error);
-    document.getElementById("mic_btn").innerHTML = "🎙️ Tap to Speak";
+recognition.onerror = () => {
+    document.getElementById("mic_btn").innerHTML = "🎙️ Error! Try Again";
 };
 </script>
-<button id="mic_btn" onclick="startVoice()" style="width:100%; padding:12px; border-radius:15px; background:#FF4B4B; color:white; border:none; cursor:pointer; font-weight:bold; font-size:16px;">
+<button id="mic_btn" onclick="startVoice()" style="width:100%; padding:15px; border-radius:15px; background:#FF4B4B; color:white; border:none; cursor:pointer; font-weight:bold; font-size:18px; margin-bottom:10px;">
     🎙️ Tap to Speak
 </button>
 """
 
-# Mic Button display
-captured_text = components.html(voice_js, height=70)
+# Display Mic
+components.html(voice_js, height=80)
 
-# Search box (Isme automatic voice text aayega)
-query = st.text_input("", placeholder="Search here...", value=st.session_state.get('search_query', ""), label_visibility="collapsed")
+# Search Box
+query = st.text_input("", placeholder="Search here...", value=st.session_state.query, label_visibility="collapsed")
 
-if st.button("Search") or query != st.session_state.get('last_query', ''):
-    if query and query != st.session_state.get('last_query', ''):
-        st.session_state.last_query = query
+# Trigger Search logic
+if query:
+    # Check agar naya sawal hai tabhi search karega
+    if "last_processed" not in st.session_state or st.session_state.last_processed != query:
+        st.session_state.last_processed = query
+        
         with st.status("Exploring...", expanded=False):
             try:
                 G_KEY = "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"
                 T_KEY = "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"
                 
+                # 1. Web Search
                 url_s = "https://api.tavily.com/search"
                 res_s = requests.post(url_s, json={"api_key": T_KEY, "query": query, "max_results": 3}).json()
                 context = "\n".join([r['content'] for r in res_s.get('results', [])])
                 
+                # 2. AI Answer
                 url_a = "https://api.groq.com/openai/v1/chat/completions"
                 payload = {
                     "model": "llama-3.3-70b-versatile",
                     "messages": [
-                        {"role": "system", "content": f"You are AI Ved. Context: {context}. Use Hinglish."},
+                        {"role": "system", "content": f"You are AI Ved. Context: {context}. Use Hinglish. Answer precisely."},
                         {"role": "user", "content": query}
                     ]
                 }
                 res_a = requests.post(url_a, json=payload, headers={"Authorization": f"Bearer {G_KEY}"}).json()
                 answer = res_a['choices'][0]['message']['content']
                 
+                # Save to history
                 st.session_state.history.append({"question": query, "answer": answer})
+                
+                # Display Result
                 st.markdown("---")
+                st.write(f"**Question:** {query}")
                 st.write(answer)
-            except:
-                st.error("Error! Try again.")
+                
+            except Exception as e:
+                st.error("Technical issue! Please try again.")
 
 st.markdown("<p style='text-align: center; margin-top: 50px; font-size: 12px; color: #888;'>Built by Gamer Ved</p>", unsafe_allow_html=True)
-            
