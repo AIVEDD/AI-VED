@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # Page Configuration
-st.set_page_config(page_title="Gamer Ved AI", page_icon="🚀", layout="wide")
+st.set_page_config(page_title="AI Ved", page_icon="🚀", layout="wide")
 
 # Sidebar mein Chat History dikhayenge
 st.sidebar.title("📜 Chat History")
